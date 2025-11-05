@@ -1,6 +1,8 @@
-import  cloudinary from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Configure Cloudinary
 cloudinary.config({
@@ -9,35 +11,28 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Create storage configurations for different upload types
-const createStorage = (folder, allowedFormats = ['jpg', 'jpeg', 'png', 'webp']) => {
-  return new CloudinaryStorage({
-    cloudinary,
-    params: {
-      folder: `listtra/${folder}`,
-      allowed_formats: allowedFormats,
-      transformation: [
-        { quality: 'auto:good' },
-        { fetch_format: 'auto' },
-      ],
-    },
-  });
-};
+// Validate configuration
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.error('❌ Cloudinary configuration missing!');
+  console.error('Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in .env');
+} else {
+  console.log('✅ Cloudinary configured:', process.env.CLOUDINARY_CLOUD_NAME);
+}
 
 // Storage for listing images
 const listingImageStorage = new CloudinaryStorage({
   cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'listtra/listings',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-      public_id: `listing_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-      transformation: [
-        { quality: 'auto:good' },
-        { fetch_format: 'auto' },
-        { width: 1200, height: 1200, crop: 'limit' },
-      ],
-    };
+  params: {
+    folder: 'listtra/listings',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    // Use string-based transformation instead of array
+    transformation: [{ 
+      width: 1200, 
+      height: 1200, 
+      crop: 'limit',
+      quality: 'auto:good',
+      fetch_format: 'auto'
+    }],
   },
 });
 
@@ -47,11 +42,14 @@ const profileImageStorage = new CloudinaryStorage({
   params: {
     folder: 'listtra/profiles',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [
-      { width: 500, height: 500, crop: 'fill', gravity: 'face' },
-      { quality: 'auto:good' },
-      { fetch_format: 'auto' },
-    ],
+    transformation: [{
+      width: 500,
+      height: 500,
+      crop: 'fill',
+      gravity: 'face',
+      quality: 'auto:good',
+      fetch_format: 'auto'
+    }],
   },
 });
 
@@ -62,7 +60,6 @@ const documentStorage = new CloudinaryStorage({
     folder: 'listtra/documents',
     allowed_formats: ['jpg', 'jpeg', 'png', 'pdf'],
     resource_type: 'auto',
-    access_mode: 'authenticated', // Secure documents
   },
 });
 
@@ -71,10 +68,10 @@ export const uploadListingImages = multer({
   storage: listingImageStorage,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
-    files: 10, // Maximum 10 images per listing
+    files: 10,
   },
   fileFilter: (req, file, cb) => {
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -89,7 +86,7 @@ export const uploadProfileImage = multer({
     fileSize: 5 * 1024 * 1024, // 5MB
   },
   fileFilter: (req, file, cb) => {
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -115,7 +112,6 @@ export const uploadDocument = multer({
 
 // Cloudinary helper functions
 export const cloudinaryHelpers = {
-  // Delete image from Cloudinary
   async deleteImage(publicId) {
     try {
       const result = await cloudinary.uploader.destroy(publicId);
@@ -126,7 +122,6 @@ export const cloudinaryHelpers = {
     }
   },
 
-  // Delete multiple images
   async deleteImages(publicIds) {
     try {
       const results = await Promise.all(
@@ -139,7 +134,6 @@ export const cloudinaryHelpers = {
     }
   },
 
-  // Generate optimized URL
   getOptimizedUrl(publicId, options = {}) {
     const defaultOptions = {
       quality: 'auto:good',
@@ -150,7 +144,6 @@ export const cloudinaryHelpers = {
     return cloudinary.url(publicId, defaultOptions);
   },
 
-  // Generate thumbnail URL
   getThumbnailUrl(publicId, width = 300, height = 300) {
     return cloudinary.url(publicId, {
       width,
@@ -161,7 +154,6 @@ export const cloudinaryHelpers = {
     });
   },
 
-  // Upload image from URL
   async uploadFromUrl(url, folder = 'listtra/general') {
     try {
       const result = await cloudinary.uploader.upload(url, {
@@ -182,7 +174,6 @@ export const cloudinaryHelpers = {
     }
   },
 
-  // Upload base64 image
   async uploadBase64(base64String, folder = 'listtra/general') {
     try {
       const result = await cloudinary.uploader.upload(
@@ -203,7 +194,6 @@ export const cloudinaryHelpers = {
     }
   },
 
-  // Generate signed URL for private resources
   async getSignedUrl(publicId, expiresIn = 3600) {
     const timestamp = Math.round(new Date().getTime() / 1000) + expiresIn;
     

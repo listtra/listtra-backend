@@ -8,7 +8,7 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPE
 
 class AIService {
   constructor() {
-    this.geminiModel = genAI ? genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }) : null;
+    this.geminiModel = genAI ? genAI.getGenerativeModel({ model: 'gemini-2.5-flash' }) : null;
     this.preferredProvider = process.env.AI_PROVIDER || 'gemini'; // 'gemini' or 'openai'
   }
 
@@ -81,7 +81,7 @@ class AIService {
     ];
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-vision-preview',
+      model: 'gpt-4o',
       messages,
       max_tokens: 1500,
       temperature: 0.3,

@@ -1,4 +1,5 @@
 import { clerkClient } from '@clerk/express';
+import { verifyToken } from '@clerk/backend';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 
@@ -6,7 +7,7 @@ import User from '../models/User.js';
 export const authenticate = async (req, res, next) => {
   try {
     const sessionToken = req.headers.authorization?.replace('Bearer ', '');
-    
+
     if (!sessionToken) {
       return res.status(401).json({
         success: false,
@@ -14,26 +15,39 @@ export const authenticate = async (req, res, next) => {
       });
     }
 
-    // Verify the session with Clerk
-    const session = await clerkClient.sessions.verifySession(
-      sessionToken,
-      process.env.CLERK_SECRET_KEY
-    );
+    const payload = await verifyToken(sessionToken, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
 
-    if (!session) {
+    if (!payload || !payload.sub) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid or expired session',
-      });
+        message: 'Invalid or expired session'
+      })
     }
 
+    const clerkUserId = payload.sub;
+
+    // Verify the session with Clerk
+    // const session = await clerkClient.sessions.verifySession(
+    //   sessionToken,
+    //   process.env.CLERK_SECRET_KEY
+    // );
+
+    // if (!session) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: 'Invalid or expired session',
+    //   });
+    // }
+
     // Get or create user in our database
-    let user = await User.findByClerkId(session.userId);
-    
+    let user = await User.findByClerkId(clerkUserId);
+
     if (!user) {
       // Fetch user details from Clerk
-      const clerkUser = await clerkClient.users.getUser(session.userId);
-      
+      const clerkUser = await clerkClient.users.getUser(clerkUserId);
+
       // Create user in our database
       user = await User.createFromClerk(clerkUser);
     }
@@ -42,20 +56,21 @@ export const authenticate = async (req, res, next) => {
 
     // Attach user to request
     req.user = user;
-    req.clerkUserId = session.userId;
-    req.sessionId = session.id;
-    
+    req.clerkUserId = clerkUserId;
+    req.sessionId = payload.sid;
+
     next();
   } catch (error) {
     console.error('Authentication error:', error);
-    
-    if (error.errors?.[0]?.code === 'session_expired') {
+
+    // Handle token expiration
+    if (error.message?.includes('expired') || error.code === 'ERR_JWT_EXPIRED') {
       return res.status(401).json({
         success: false,
         message: 'Session expired. Please login again.',
       });
     }
-    
+
     return res.status(401).json({
       success: false,
       message: 'Authentication failed',
@@ -67,7 +82,7 @@ export const authenticate = async (req, res, next) => {
 export const optionalAuth = async (req, res, next) => {
   try {
     const sessionToken = req.headers.authorization?.replace('Bearer ', '');
-    
+
     if (!sessionToken) {
       return next();
     }
@@ -88,7 +103,7 @@ export const optionalAuth = async (req, res, next) => {
     // Silent fail for optional auth
     console.log('Optional auth failed:', error.message);
   }
-  
+
   next();
 };
 
@@ -100,29 +115,29 @@ export const requireOwnership = (modelName, paramName = 'id') => {
     try {
       const Model = mongoose.model(modelName);
       const resource = await Model.findById(req.params[paramName]);
-      
+
       if (!resource) {
         return res.status(404).json({
           success: false,
           message: `${modelName} not found`,
         });
       }
-      
+
       // Check ownership based on model
       let isOwner = false;
-      
+
       // For listings, check user_id field
       if (resource.user_id) {
         isOwner = resource.user_id.toString() === req.user._id.toString();
       }
-      
+
       if (!isOwner) {
         return res.status(403).json({
           success: false,
           message: 'You do not have permission to access this resource',
         });
       }
-      
+
       req.resource = resource;
       next();
     } catch (error) {
