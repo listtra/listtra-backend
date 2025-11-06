@@ -3,6 +3,8 @@ import User from '../models/User.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { validationResult } from 'express-validator';
 
+const DEFAULT_PLACEHOLDER_IMAGE = 'https://dummyimage.com/800x600/e5e7eb/6b7280.png&text=No+Image+Available';
+
 const listingController = {
   // Search listings
   async search(req, res) {
@@ -117,7 +119,7 @@ const listingController = {
       user_id: req.user._id,
       title: req.body.title,
       model_number: req.body.model_number || '',
-      photo_url: req.body.photo_url || '',
+      photo_url: req.body.photo_url || DEFAULT_PLACEHOLDER_IMAGE,
       description: req.body.description,
       additional_photos: req.body.additional_photos || [],
       condition: req.body.condition || 'good',
@@ -239,46 +241,6 @@ const listingController = {
         pages: Math.ceil(total / parseInt(limit)),
       },
     });
-  },
-
-  // Create listing with AI analysis
-  async createWithAI(req, res) {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
-    }
-
-    // Validate that we have either photo_url or model_number
-    if (!req.body.photo_url && !req.body.model_number) {
-      return res.status(400).json({
-        success: false,
-        errors: [{ msg: 'Either photo_url or model_number is required' }],
-      });
-    }
-
-    // The AI analysis should be done before this endpoint is called
-    // This receives the analyzed data and creates the listing
-    const listingData = {
-      user_id: req.user._id,
-      title: req.body.title,
-      model_number: req.body.model_number || '',
-      photo_url: req.body.photo_url || '',
-      description: req.body.description, // Full AI-generated content in description
-      additional_photos: req.body.additional_photos || [],
-      condition: req.body.condition || 'good',
-      status: 'active',
-      created_at: new Date(),
-    };
-
-    const listing = await Listing.create(listingData);
-    await listing.populate('user_id', 'name email avatar_url');
-
-    res.status(201).json({
-      success: true,
-      listing,
-      message: 'Listing created with AI-generated content',
-    });
-  },
+  }
 };
-
 export default listingController;

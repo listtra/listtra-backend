@@ -11,7 +11,7 @@ const router = Router();
 const validateListing = [
   body('title').trim().notEmpty().isLength({ max: 200 }),
   body('description').trim().notEmpty().isLength({ max: 10000 }),
-  body('photo_url').optional().isURL(),
+  body('photo_url').optional({ checkFalsy: true }).isURL(),
   body('model_number').optional().trim().isLength({ max: 100 }),
   body('additional_photos').optional().isArray(),
   body('additional_photos.*').optional().isURL(),
