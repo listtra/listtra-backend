@@ -120,7 +120,7 @@ const listingController = {
       photo_url: req.body.photo_url || '',
       description: req.body.description,
       additional_photos: req.body.additional_photos || [],
-      ai_metadata: req.body.ai_metadata || {},
+      condition: req.body.condition || 'good',
       status: req.body.status || 'active',
       created_at: new Date(),
     };
@@ -153,17 +153,12 @@ const listingController = {
     }
 
     // Update allowed fields
-    const allowedUpdates = ['title', 'model_number', 'photo_url', 'description', 'additional_photos', 'status'];
+    const allowedUpdates = ['title', 'model_number', 'photo_url', 'description', 'additional_photos', 'condition', 'status'];
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
         listing[field] = req.body[field];
       }
     });
-
-    // Update AI metadata if provided
-    if (req.body.ai_metadata) {
-      listing.ai_metadata = { ...listing.ai_metadata, ...req.body.ai_metadata };
-    }
 
     await listing.save();
     await listing.populate('user_id', 'name email avatar_url');
@@ -268,16 +263,9 @@ const listingController = {
       title: req.body.title,
       model_number: req.body.model_number || '',
       photo_url: req.body.photo_url || '',
-      description: req.body.description,
+      description: req.body.description, // Full AI-generated content in description
       additional_photos: req.body.additional_photos || [],
-      ai_metadata: {
-        generated: true,
-        category: req.body.category,
-        condition: req.body.condition,
-        suggested_price: req.body.suggested_price,
-        keywords: req.body.keywords || [],
-        confidence: req.body.confidence || 0,
-      },
+      condition: req.body.condition || 'good',
       status: 'active',
       created_at: new Date(),
     };

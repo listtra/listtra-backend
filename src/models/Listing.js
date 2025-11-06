@@ -27,27 +27,18 @@ const listingSchema = new mongoose.Schema({
   description: {
     type: String,
     required: true,
-    maxlength: 5000,
+    maxlength: 10000, // Increased to accommodate full AI-generated content
     index: 'text',
   },
   // Additional photos (optional)
   additional_photos: [{
     type: String,
   }],
-  // AI-generated metadata (optional, for enhanced features)
-  ai_metadata: {
-    generated: {
-      type: Boolean,
-      default: false,
-    },
-    category: String,
-    condition: String,
-    suggested_price: {
-      min: Number,
-      max: Number,
-    },
-    keywords: [String],
-    confidence: Number,
+  // Simplified metadata - only essential fields
+  condition: {
+    type: String,
+    enum: ['new', 'like-new', 'excellent', 'good', 'fair', 'poor', 'for-parts'],
+    default: 'good',
   },
   // Status for soft delete or draft functionality
   status: {
@@ -81,10 +72,6 @@ listingSchema.virtual('user', {
 // Methods
 listingSchema.methods.toJSON = function() {
   const listing = this.toObject();
-  // Clean up the output
-  if (listing.ai_metadata && !listing.ai_metadata.generated) {
-    delete listing.ai_metadata;
-  }
   return listing;
 };
 

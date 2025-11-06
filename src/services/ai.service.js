@@ -127,50 +127,117 @@ class AIService {
    * Build analysis prompt
    */
   buildPrompt(modelNumber, additionalInfo) {
-    let prompt = `Analyze this product and provide detailed information for a marketplace listing.
+    const productIdentifier = modelNumber || 'the product shown in the images';
     
-    Please provide the following in JSON format:
-    {
-      "title": "Concise, descriptive product title (max 80 chars)",
-      "description": "Detailed product description including key features, specifications, and condition details (200-500 words)",
-      "category": {
-        "main": "Main category (Electronics, Fashion, Home, Sports, etc.)",
-        "sub": "Subcategory",
-        "tags": ["relevant", "search", "tags"]
-      },
-      "condition": "new|like-new|excellent|good|fair|poor|for-parts",
-      "conditionNotes": "Specific condition details, any defects or wear",
-      "specifications": {
-        "brand": "Product brand",
-        "model": "Product model",
-        "modelNumber": "Model number if visible",
-        "year": "Year if applicable",
-        "color": "Product color",
-        "size": "Size if applicable",
-        "material": "Materials used",
-        "features": ["key", "product", "features"]
-      },
-      "suggestedPrice": {
-        "min": "Minimum suggested price in USD",
-        "max": "Maximum suggested price in USD",
-        "reasoning": "Brief price justification"
-      },
-      "searchKeywords": ["relevant", "search", "keywords"],
-      "warnings": ["Any safety or authenticity concerns"],
-      "confidence": 0.95
-    }`;
+    let prompt = `Act as a senior e-commerce content strategist and marketplace listing expert.
+
+Generate premium marketplace content for this product: **${productIdentifier}**
+
+Deliver the output in strict JSON format with the following structure:
+
+{
+  "seoTitle": "SEO-optimised product title (80-120 chars) - include brand, model, key features",
+  "keyFeatures": [
+    "6-10 bullet points focused on real benefits, not just specs",
+    "Emphasise build quality, energy efficiency, hygiene, durability, capacity, quiet operation",
+    "Each point should highlight value and user benefits"
+  ],
+  "productDescription": "2-3 paragraphs, premium tone. Clear, helpful, professional — no hype. Explain who it's ideal for and why. (200-300 words)",
+  "specifications": {
+    "brand": "Product brand",
+    "model": "Product model",
+    "modelNumber": "Full model number",
+    "category": "Product category (Electronics, Fashion, Home Appliances, Furniture, Sports, Automotive, etc.)",
+    "subCategory": "Specific subcategory",
+    "dimensions": "Product dimensions (L x W x H)",
+    "weight": "Product weight",
+    "capacity": "Capacity/Size if applicable",
+    "color": "Product color/finish",
+    "material": "Primary materials used",
+    "year": "Year/manufacture date",
+    "condition": "Current condition assessment",
+    "powerSpecs": "Power requirements/battery (if applicable)",
+    "connectivity": "Connection types/ports (if applicable)",
+    "compatibility": "Compatible systems/models (if applicable)",
+    "warranty": "Warranty information (if known)",
+    "origin": "Country of manufacture (if visible)",
+    "certifications": "Safety certifications/standards (if visible)",
+    "allSpecs": {
+      "Generate ALL product-specific specifications here as key-value pairs": "Include every technical detail, feature, measurement, rating, etc. based on product type",
+      "For Electronics": "Screen size, resolution, processor, RAM, storage, battery, OS, etc.",
+      "For Appliances": "Energy rating, capacity, dimensions, load type, RPM, noise level, etc.",
+      "For Furniture": "Dimensions, material, weight capacity, assembly required, style, etc.",
+      "For Clothing": "Size, fit, fabric composition, care instructions, style, etc.",
+      "For Vehicles/Parts": "Make, model, year, VIN, mileage, engine, transmission, etc.",
+      "Be comprehensive": "Include everything visible or known about this specific product"
+    }
+  },
+  "shortMarketplaceSummary": "1 concise paragraph for eBay/FB Marketplace/Google Shopping (50-80 words)",
+  "longSeoDescription": "1-2 paragraphs targeting search keywords. Avoid repetition from earlier sections. Focus on benefits and search intent. (150-200 words)",
+  "seoKeywords": {
+    "primary": ["3-5 primary keywords"],
+    "secondary": ["5-7 secondary keywords"],
+    "longTail": ["5-8 long-tail keywords phrases"]
+  },
+  "marketplaceTags": ["20-30 relevant tags for marketplace categorisation"],
+  "condition": "new|like-new|excellent|good|fair|poor|for-parts",
+  "conditionNotes": "Specific condition details if visible, any defects or wear",
+  "suggestedPrice": {
+    "min": 0,
+    "max": 0,
+    "currency": "USD",
+    "reasoning": "Brief price justification based on condition and market value"
+  },
+  "warnings": ["Any safety or authenticity concerns if applicable"],
+  "confidence": 0.95
+}
+
+**Tone & Style Guidelines:**
+- Sounds like premium retail (Appliances Online / The Good Guys / JB Hi-Fi)
+- Clean, confident, premium tone
+- Australia context where relevant
+- Zero fluff, zero overly-salesy language
+- Use straightforward language, high trust, high clarity
+- Focus on durability, hygiene, efficiency and real user benefits
+
+**Important:**
+- Write as if product details are known
+- Focus on high-intent keywords and conversion
+- Make content suitable for Facebook Marketplace, eBay, Google Shopping & website product pages
+- Include keywords that improve search ranking
+- Avoid repeated sentences across sections
+- **CRITICAL: Generate ALL possible specifications for this product type**
+- Extract every technical detail visible or known
+- Fill the "allSpecs" object with comprehensive product-specific details
+- Be thorough - more specifications = better listings`;
 
     if (modelNumber) {
-      prompt += `\n\nModel Number provided: ${modelNumber}. Use this to look up accurate specifications and current market prices. Provide comprehensive details based on this model number.`;
+      prompt += `\n\n**Product Model Number:** ${modelNumber}\n\nLook up this exact model and provide:
+- ALL technical specifications from manufacturer
+- Complete feature list
+- Every measurement and rating
+- All compatibility information
+- Full performance specifications
+- Any certifications or standards
+- Complete material/construction details
+- Everything a buyer would want to know`;
     } else {
-      prompt += `\n\nNote: Analyze the product from the images provided.`;
+      prompt += `\n\n**Note:** Analyze the product from the images provided.\n\nExtract from images:
+- Identify brand, model, and model numbers from labels
+- Read all visible text, labels, and tags
+- Estimate dimensions from context
+- Identify materials from appearance
+- Note any visible specifications or ratings
+- Capture serial numbers or model codes
+- Identify any certifications or safety marks
+- Extract ALL visible information`;
     }
 
     if (additionalInfo) {
-      prompt += `\n\nAdditional context: ${additionalInfo}`;
+      prompt += `\n\n**Additional Context:** ${additionalInfo}`;
     }
 
-    prompt += '\n\nBe accurate and honest about the condition. If you cannot determine certain details, indicate that clearly.';
+    prompt += '\n\nBe accurate and honest about the condition. If you cannot determine certain details from the information provided, indicate that clearly in the confidence score.';
 
     return prompt;
   }
@@ -185,37 +252,78 @@ class AIService {
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
 
-        // Validate and clean the response
+        // Validate and clean the response with new structure
         return {
-          title: parsed.title?.substring(0, 200) || 'Product Listing',
-          description: parsed.description || '',
-          category: {
-            main: parsed.category?.main || 'Other',
-            sub: parsed.category?.sub || '',
-            tags: Array.isArray(parsed.category?.tags) ? parsed.category.tags : [],
+          // Main title from seoTitle
+          title: parsed.seoTitle?.substring(0, 200) || 'Product Listing',
+          
+          // Use productDescription as main description
+          description: parsed.productDescription || '',
+          
+          // Additional structured content for marketplace
+          marketplaceContent: {
+            seoTitle: parsed.seoTitle || '',
+            keyFeatures: Array.isArray(parsed.keyFeatures) ? parsed.keyFeatures : [],
+            productDescription: parsed.productDescription || '',
+            shortMarketplaceSummary: parsed.shortMarketplaceSummary || '',
+            longSeoDescription: parsed.longSeoDescription || '',
+            seoKeywords: {
+              primary: Array.isArray(parsed.seoKeywords?.primary) ? parsed.seoKeywords.primary : [],
+              secondary: Array.isArray(parsed.seoKeywords?.secondary) ? parsed.seoKeywords.secondary : [],
+              longTail: Array.isArray(parsed.seoKeywords?.longTail) ? parsed.seoKeywords.longTail : [],
+            },
+            marketplaceTags: Array.isArray(parsed.marketplaceTags) ? parsed.marketplaceTags : [],
           },
+          
+          // Extract category from tags/keywords
+          category: {
+            main: parsed.specifications?.category || 'Other',
+            sub: '',
+            tags: Array.isArray(parsed.marketplaceTags) ? parsed.marketplaceTags.slice(0, 10) : [],
+          },
+          
           condition: this.validateCondition(parsed.condition),
           conditionNotes: parsed.conditionNotes || '',
+          
           specifications: {
             brand: parsed.specifications?.brand || '',
             model: parsed.specifications?.model || '',
             modelNumber: parsed.specifications?.modelNumber || '',
+            category: parsed.specifications?.category || '',
+            subCategory: parsed.specifications?.subCategory || '',
+            dimensions: parsed.specifications?.dimensions || '',
+            weight: parsed.specifications?.weight || '',
             year: parsed.specifications?.year || null,
             color: parsed.specifications?.color || '',
-            size: parsed.specifications?.size || '',
+            size: parsed.specifications?.size || parsed.specifications?.capacity || '',
             material: parsed.specifications?.material || '',
-            features: Array.isArray(parsed.specifications?.features)
-              ? parsed.specifications.features
+            capacity: parsed.specifications?.capacity || '',
+            condition: parsed.specifications?.condition || '',
+            powerSpecs: parsed.specifications?.powerSpecs || '',
+            connectivity: parsed.specifications?.connectivity || '',
+            compatibility: parsed.specifications?.compatibility || '',
+            warranty: parsed.specifications?.warranty || '',
+            origin: parsed.specifications?.origin || '',
+            certifications: parsed.specifications?.certifications || '',
+            features: Array.isArray(parsed.keyFeatures) 
+              ? parsed.keyFeatures 
               : [],
+            allSpecs: parsed.specifications?.allSpecs || {},
           },
+          
           suggestedPrice: {
             min: parseFloat(parsed.suggestedPrice?.min) || 0,
             max: parseFloat(parsed.suggestedPrice?.max) || 0,
+            currency: parsed.suggestedPrice?.currency || 'USD',
             reasoning: parsed.suggestedPrice?.reasoning || '',
           },
-          searchKeywords: Array.isArray(parsed.searchKeywords)
-            ? parsed.searchKeywords
-            : [],
+          
+          // Combine all keywords
+          searchKeywords: [
+            ...(Array.isArray(parsed.seoKeywords?.primary) ? parsed.seoKeywords.primary : []),
+            ...(Array.isArray(parsed.seoKeywords?.secondary) ? parsed.seoKeywords.secondary : []),
+          ],
+          
           warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
           confidence: parseFloat(parsed.confidence) || 0.5,
           aiProvider: provider,
@@ -226,16 +334,26 @@ class AIService {
       throw new Error('Could not parse AI response');
     } catch (error) {
       console.error('Error parsing AI response:', error);
+      console.error('Raw text:', text);
 
       // Return a basic structure if parsing fails
       return {
         title: 'Product for Sale',
         description: text.substring(0, 1000),
+        marketplaceContent: {
+          seoTitle: '',
+          keyFeatures: [],
+          productDescription: text.substring(0, 500),
+          shortMarketplaceSummary: '',
+          longSeoDescription: '',
+          seoKeywords: { primary: [], secondary: [], longTail: [] },
+          marketplaceTags: [],
+        },
         category: { main: 'Other', sub: '', tags: [] },
         condition: 'good',
         conditionNotes: '',
         specifications: {},
-        suggestedPrice: { min: 0, max: 0, reasoning: '' },
+        suggestedPrice: { min: 0, max: 0, currency: 'USD', reasoning: '' },
         searchKeywords: [],
         warnings: [],
         confidence: 0.3,

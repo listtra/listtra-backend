@@ -10,11 +10,12 @@ const router = Router();
 // Validation middleware
 const validateListing = [
   body('title').trim().notEmpty().isLength({ max: 200 }),
-  body('description').trim().notEmpty().isLength({ max: 5000 }),
+  body('description').trim().notEmpty().isLength({ max: 10000 }),
   body('photo_url').optional().isURL(),
   body('model_number').optional().trim().isLength({ max: 100 }),
   body('additional_photos').optional().isArray(),
   body('additional_photos.*').optional().isURL(),
+  body('condition').optional().isIn(['new', 'like-new', 'excellent', 'good', 'fair', 'poor', 'for-parts']),
   // Custom validation to ensure either photo_url or model_number exists
   body().custom((value, { req }) => {
     if (!req.body.photo_url && !req.body.model_number) {
@@ -71,14 +72,7 @@ router.post(
 
 router.post(
   '/create-with-ai',
-  [
-    ...validateListing,
-    body('category').optional().trim(),
-    body('condition').optional().trim(),
-    body('suggested_price').optional().isObject(),
-    body('keywords').optional().isArray(),
-    body('confidence').optional().isFloat({ min: 0, max: 1 }),
-  ],
+  validateListing,
   asyncHandler(listingController.createWithAI)
 );
 
