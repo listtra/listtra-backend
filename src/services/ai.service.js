@@ -17,6 +17,10 @@ class AIService {
    */
   async analyzeProductImages(images, modelNumber = null, additionalInfo = null) {
     try {
+      // Validate that we have either images or model number
+      if ((!images || images.length === 0) && !modelNumber) {
+        throw new AppError('Either images or model number is required', 400);
+      }
       if (this.preferredProvider === 'gemini' && this.geminiModel) {
         return await this.analyzeWithGemini(images, modelNumber, additionalInfo);
       } else if (this.preferredProvider === 'openai' && openai) {
@@ -35,7 +39,15 @@ class AIService {
    */
   async analyzeWithGemini(images, modelNumber, additionalInfo) {
     const prompt = this.buildPrompt(modelNumber, additionalInfo);
-    
+
+    // If no images provided, analyze based on model number only
+    if (!images || images.length === 0) {
+      const result = await this.geminiModel.generateContent([prompt]);
+      const response = await result.response;
+      const text = response.text();
+      return this.parseAIResponse(text, 'gemini');
+    }
+
     // Convert images to Gemini format
     const imageParts = await Promise.all(
       images.map(async (imageUrl) => {
@@ -62,7 +74,28 @@ class AIService {
    */
   async analyzeWithGPT4(images, modelNumber, additionalInfo) {
     const prompt = this.buildPrompt(modelNumber, additionalInfo);
-    
+
+    // If no images provided, use regular GPT-4 (not vision)
+    if (!images || images.length === 0) {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at analyzing product specifications and creating detailed, accurate marketplace listings. Always provide honest condition assessments and accurate product information.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: 1500,
+        temperature: 0.3,
+      });
+
+      return this.parseAIResponse(response.choices[0].message.content, 'openai');
+    }
+
     const messages = [
       {
         role: 'system',
@@ -94,7 +127,7 @@ class AIService {
    * Build analysis prompt
    */
   buildPrompt(modelNumber, additionalInfo) {
-    let prompt = `Analyze these product images and provide detailed information for a marketplace listing.
+    let prompt = `Analyze this product and provide detailed information for a marketplace listing.
     
     Please provide the following in JSON format:
     {
@@ -128,14 +161,16 @@ class AIService {
     }`;
 
     if (modelNumber) {
-      prompt += `\n\nModel Number provided: ${modelNumber}. Use this to look up accurate specifications.`;
+      prompt += `\n\nModel Number provided: ${modelNumber}. Use this to look up accurate specifications and current market prices. Provide comprehensive details based on this model number.`;
+    } else {
+      prompt += `\n\nNote: Analyze the product from the images provided.`;
     }
 
     if (additionalInfo) {
       prompt += `\n\nAdditional context: ${additionalInfo}`;
     }
 
-    prompt += '\n\nBe accurate and honest about the condition. If you cannot determine certain details from the images, indicate that clearly.';
+    prompt += '\n\nBe accurate and honest about the condition. If you cannot determine certain details, indicate that clearly.';
 
     return prompt;
   }
@@ -149,7 +184,7 @@ class AIService {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        
+
         // Validate and clean the response
         return {
           title: parsed.title?.substring(0, 200) || 'Product Listing',
@@ -169,8 +204,8 @@ class AIService {
             color: parsed.specifications?.color || '',
             size: parsed.specifications?.size || '',
             material: parsed.specifications?.material || '',
-            features: Array.isArray(parsed.specifications?.features) 
-              ? parsed.specifications.features 
+            features: Array.isArray(parsed.specifications?.features)
+              ? parsed.specifications.features
               : [],
           },
           suggestedPrice: {
@@ -178,8 +213,8 @@ class AIService {
             max: parseFloat(parsed.suggestedPrice?.max) || 0,
             reasoning: parsed.suggestedPrice?.reasoning || '',
           },
-          searchKeywords: Array.isArray(parsed.searchKeywords) 
-            ? parsed.searchKeywords 
+          searchKeywords: Array.isArray(parsed.searchKeywords)
+            ? parsed.searchKeywords
             : [],
           warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
           confidence: parseFloat(parsed.confidence) || 0.5,
@@ -187,11 +222,11 @@ class AIService {
           generatedAt: new Date(),
         };
       }
-      
+
       throw new Error('Could not parse AI response');
     } catch (error) {
       console.error('Error parsing AI response:', error);
-      
+
       // Return a basic structure if parsing fails
       return {
         title: 'Product for Sale',
@@ -217,11 +252,11 @@ class AIService {
   validateCondition(condition) {
     const validConditions = ['new', 'like-new', 'excellent', 'good', 'fair', 'poor', 'for-parts'];
     const normalized = condition?.toLowerCase().replace(/[^a-z-]/g, '');
-    
+
     if (validConditions.includes(normalized)) {
       return normalized;
     }
-    
+
     // Try to map common variations
     const conditionMap = {
       'brand new': 'new',
@@ -232,13 +267,13 @@ class AIService {
       'damaged': 'poor',
       'broken': 'for-parts',
     };
-    
+
     for (const [key, value] of Object.entries(conditionMap)) {
       if (normalized?.includes(key)) {
         return value;
       }
     }
-    
+
     return 'good'; // Default condition
   }
 
@@ -247,10 +282,10 @@ class AIService {
    */
   generateTitle(brand, model, category, additionalDetails = {}) {
     const parts = [];
-    
+
     if (brand) parts.push(brand);
     if (model) parts.push(model);
-    
+
     // Add relevant details based on category
     if (category === 'Electronics' && additionalDetails.storage) {
       parts.push(additionalDetails.storage);
@@ -261,7 +296,7 @@ class AIService {
     if (additionalDetails.color) {
       parts.push(additionalDetails.color);
     }
-    
+
     return parts.join(' ').substring(0, 200);
   }
 
@@ -271,12 +306,12 @@ class AIService {
   enhanceDescription(description, keywords) {
     // Add keywords naturally to the description
     const enhanced = description;
-    
+
     // Add a keyword-rich closing paragraph
     const keywordParagraph = `\n\nPerfect for those searching for ${keywords.slice(0, 3).join(', ')}. ` +
       `This listing includes everything shown in the photos. ` +
       `Keywords: ${keywords.join(', ')}.`;
-    
+
     return enhanced + keywordParagraph;
   }
 

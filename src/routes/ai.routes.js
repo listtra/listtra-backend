@@ -24,17 +24,21 @@ router.post(
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    if (!req.files || req.files.length === 0) {
+    // Check that we have either images or model number
+    const hasImages = req.files && req.files.length > 0;
+    const hasModelNumber = req.body.modelNumber && req.body.modelNumber.trim().length > 0;
+
+    if (!hasImages && !hasModelNumber) {
       return res.status(400).json({
         success: false,
-        message: 'At least one image is required',
+        message: 'Either images or model number is required',
       });
     }
 
-    // Get image URLs from uploaded files
-    const imageUrls = req.files.map(file => file.path);
+    // Get image URLs from uploaded files (if any)
+    const imageUrls = hasImages ? req.files.map(file => file.path) : [];
 
-    // Analyze images with AI
+    // Analyze with AI
     const analysis = await aiService.analyzeProductImages(
       imageUrls,
       req.body.modelNumber,
@@ -46,7 +50,7 @@ router.post(
       title: analysis.title,
       description: analysis.description,
       model_number: req.body.modelNumber || analysis.specifications?.modelNumber || '',
-      photo_url: imageUrls[0], // Main photo
+      photo_url: imageUrls.length > 0 ? imageUrls[0] : '', // Main photo (empty if no images)
       additional_photos: imageUrls.slice(1), // Rest of the photos
       ai_metadata: {
         generated: true,
@@ -81,7 +85,7 @@ router.post(
     }
 
     const { model_number, category, brand } = req.body;
-    
+
     const title = aiService.generateTitle(
       brand || '',
       model_number || '',
@@ -109,7 +113,7 @@ router.post(
     }
 
     const { description, keywords = [] } = req.body;
-    
+
     const enhanced = aiService.enhanceDescription(description, keywords);
 
     res.json({

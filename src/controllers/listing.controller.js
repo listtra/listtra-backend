@@ -83,7 +83,7 @@ const listingController = {
     if (includeInactive !== 'true') {
       filter.status = 'active';
     }
-    
+
     const total = await Listing.countDocuments(filter);
 
     res.json({
@@ -105,11 +105,19 @@ const listingController = {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
+    // Validate that we have either photo_url or model_number
+    if (!req.body.photo_url && !req.body.model_number) {
+      return res.status(400).json({
+        success: false,
+        errors: [{ msg: 'Either photo_url or model_number is required' }],
+      });
+    }
+
     const listingData = {
       user_id: req.user._id,
       title: req.body.title,
       model_number: req.body.model_number || '',
-      photo_url: req.body.photo_url,
+      photo_url: req.body.photo_url || '',
       description: req.body.description,
       additional_photos: req.body.additional_photos || [],
       ai_metadata: req.body.ai_metadata || {},
@@ -214,7 +222,7 @@ const listingController = {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const filter = { user_id: req.user._id };
-    
+
     if (status !== 'all') {
       filter.status = status;
     }
@@ -245,13 +253,21 @@ const listingController = {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
+    // Validate that we have either photo_url or model_number
+    if (!req.body.photo_url && !req.body.model_number) {
+      return res.status(400).json({
+        success: false,
+        errors: [{ msg: 'Either photo_url or model_number is required' }],
+      });
+    }
+
     // The AI analysis should be done before this endpoint is called
     // This receives the analyzed data and creates the listing
     const listingData = {
       user_id: req.user._id,
       title: req.body.title,
       model_number: req.body.model_number || '',
-      photo_url: req.body.photo_url,
+      photo_url: req.body.photo_url || '',
       description: req.body.description,
       additional_photos: req.body.additional_photos || [],
       ai_metadata: {

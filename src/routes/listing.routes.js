@@ -11,10 +11,17 @@ const router = Router();
 const validateListing = [
   body('title').trim().notEmpty().isLength({ max: 200 }),
   body('description').trim().notEmpty().isLength({ max: 5000 }),
-  body('photo_url').notEmpty().isURL(),
+  body('photo_url').optional().isURL(),
   body('model_number').optional().trim().isLength({ max: 100 }),
   body('additional_photos').optional().isArray(),
   body('additional_photos.*').optional().isURL(),
+  // Custom validation to ensure either photo_url or model_number exists
+  body().custom((value, { req }) => {
+    if (!req.body.photo_url && !req.body.model_number) {
+      throw new Error('Either photo_url or model_number is required');
+    }
+    return true;
+  }),
 ];
 
 const validateSearch = [
