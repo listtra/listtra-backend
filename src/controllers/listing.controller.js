@@ -121,14 +121,24 @@ const listingController = {
       model_number: req.body.model_number || '',
       photo_url: req.body.photo_url || DEFAULT_PLACEHOLDER_IMAGE,
       description: req.body.description,
+      key_features: req.body.key_features || [],
+      specifications: req.body.specifications || {},
+      seo_keywords: req.body.seo_keywords || { primary: [], secondary: [], longTail: [] },
+      marketplace_tags: req.body.marketplace_tags || [],
+      seo_description: req.body.seo_description || '',
+      quick_summary: req.body.quick_summary || '',
       additional_photos: req.body.additional_photos || [],
       condition: req.body.condition || 'good',
       status: req.body.status || 'active',
       created_at: new Date(),
     };
 
+    console.log('Creating listing with specifications:', JSON.stringify(req.body.specifications, null, 2));
+
     const listing = await Listing.create(listingData);
     await listing.populate('user_id', 'name email avatar_url');
+    
+    console.log('Created listing specifications:', listing.specifications);
 
     res.status(201).json({
       success: true,
@@ -155,7 +165,11 @@ const listingController = {
     }
 
     // Update allowed fields
-    const allowedUpdates = ['title', 'model_number', 'photo_url', 'description', 'additional_photos', 'condition', 'status'];
+    const allowedUpdates = [
+      'title', 'model_number', 'photo_url', 'description', 
+      'key_features', 'specifications', 'seo_keywords', 'marketplace_tags',
+      'seo_description', 'quick_summary', 'additional_photos', 'condition', 'status'
+    ];
     allowedUpdates.forEach(field => {
       if (req.body[field] !== undefined) {
         listing[field] = req.body[field];

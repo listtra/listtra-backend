@@ -30,6 +30,30 @@ const listingSchema = new mongoose.Schema({
     maxlength: 10000, // Increased to accommodate full AI-generated content
     index: 'text',
   },
+  // Structured content fields for better organization
+  key_features: [{
+    type: String,
+    maxlength: 500,
+  }],
+  specifications: {
+    type: Map,
+    of: String,
+    default: {},
+  },
+  seo_keywords: {
+    primary: [String],
+    secondary: [String],
+    longTail: [String],
+  },
+  marketplace_tags: [String],
+  seo_description: {
+    type: String,
+    maxlength: 10000,
+  },
+  quick_summary: {
+    type: String,
+    maxlength: 500,
+  },
   // Additional photos (optional)
   additional_photos: [{
     type: String,
@@ -53,6 +77,26 @@ const listingSchema = new mongoose.Schema({
   },
 }, {
   timestamps: false, // We're using created_at instead
+  toJSON: { 
+    virtuals: false,
+    transform: function(doc, ret) {
+      // Convert Map to plain object for specifications
+      if (ret.specifications instanceof Map) {
+        ret.specifications = Object.fromEntries(ret.specifications);
+      }
+      return ret;
+    }
+  },
+  toObject: {
+    virtuals: false,
+    transform: function(doc, ret) {
+      // Convert Map to plain object for specifications
+      if (ret.specifications instanceof Map) {
+        ret.specifications = Object.fromEntries(ret.specifications);
+      }
+      return ret;
+    }
+  }
 });
 
 // Indexes for performance
@@ -72,6 +116,12 @@ listingSchema.virtual('user', {
 // Methods
 listingSchema.methods.toJSON = function() {
   const listing = this.toObject();
+  
+  // Convert Map to plain object for specifications
+  if (listing.specifications instanceof Map) {
+    listing.specifications = Object.fromEntries(listing.specifications);
+  }
+  
   return listing;
 };
 
