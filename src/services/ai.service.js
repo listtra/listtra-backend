@@ -128,119 +128,107 @@ class AIService {
    */
   buildPrompt(modelNumber, additionalInfo) {
     const productIdentifier = modelNumber || 'the product shown in the images';
-    
+
     let prompt = `Act as a senior e-commerce content strategist and marketplace listing expert.
-
-Generate premium marketplace content for this product: **${productIdentifier}**
-
-Deliver the output in strict JSON format with the following structure:
-
-{
-  "seoTitle": "SEO-optimised product title (80-120 chars) - include brand, model, key features",
-  "keyFeatures": [
-    "6-10 bullet points focused on real benefits, not just specs",
-    "Emphasise build quality, energy efficiency, hygiene, durability, capacity, quiet operation",
-    "Each point should highlight value and user benefits"
-  ],
-  "productDescription": "2-3 paragraphs, premium tone. Clear, helpful, professional — no hype. Explain who it's ideal for and why. (200-300 words)",
-  "specifications": {
-    "brand": "Product brand",
-    "model": "Product model",
-    "modelNumber": "Full model number",
-    "category": "Product category (Electronics, Fashion, Home Appliances, Furniture, Sports, Automotive, etc.)",
-    "subCategory": "Specific subcategory",
-    "dimensions": "Product dimensions (L x W x H)",
-    "weight": "Product weight",
-    "capacity": "Capacity/Size if applicable",
-    "color": "Product color/finish",
-    "material": "Primary materials used",
-    "year": "Year/manufacture date",
-    "condition": "Current condition assessment",
-    "powerSpecs": "Power requirements/battery (if applicable)",
-    "connectivity": "Connection types/ports (if applicable)",
-    "compatibility": "Compatible systems/models (if applicable)",
-    "warranty": "Warranty information (if known)",
-    "origin": "Country of manufacture (if visible)",
-    "certifications": "Safety certifications/standards (if visible)",
-    "allSpecs": {
-      "Generate ALL product-specific specifications here as key-value pairs": "Include every technical detail, feature, measurement, rating, etc. based on product type",
-      "For Electronics": "Screen size, resolution, processor, RAM, storage, battery, OS, etc.",
-      "For Appliances": "Energy rating, capacity, dimensions, load type, RPM, noise level, etc.",
-      "For Furniture": "Dimensions, material, weight capacity, assembly required, style, etc.",
-      "For Clothing": "Size, fit, fabric composition, care instructions, style, etc.",
-      "For Vehicles/Parts": "Make, model, year, VIN, mileage, engine, transmission, etc.",
-      "Be comprehensive": "Include everything visible or known about this specific product"
-    }
-  },
-  "shortMarketplaceSummary": "1 concise paragraph for eBay/FB Marketplace/Google Shopping (50-80 words)",
-  "longSeoDescription": "1-2 paragraphs targeting search keywords. Avoid repetition from earlier sections. Focus on benefits and search intent. (150-200 words)",
-  "seoKeywords": {
-    "primary": ["3-5 primary keywords"],
-    "secondary": ["5-7 secondary keywords"],
-    "longTail": ["5-8 long-tail keywords phrases"]
-  },
-  "marketplaceTags": ["20-30 relevant tags for marketplace categorisation"],
-  "condition": "new|like-new|excellent|good|fair|poor|for-parts",
-  "conditionNotes": "Specific condition details if visible, any defects or wear",
-  "suggestedPrice": {
-    "min": 0,
-    "max": 0,
-    "currency": "USD",
-    "reasoning": "Brief price justification based on condition and market value"
-  },
-  "warnings": ["Any safety or authenticity concerns if applicable"],
-  "confidence": 0.95
-}
-
-**Tone & Style Guidelines:**
-- Sounds like premium retail (Appliances Online / The Good Guys / JB Hi-Fi)
-- Clean, confident, premium tone
-- Australia context where relevant
-- Zero fluff, zero overly-salesy language
-- Use straightforward language, high trust, high clarity
-- Focus on durability, hygiene, efficiency and real user benefits
-
-**Important:**
-- Write as if product details are known
-- Focus on high-intent keywords and conversion
-- Make content suitable for Facebook Marketplace, eBay, Google Shopping & website product pages
-- Include keywords that improve search ranking
-- Avoid repeated sentences across sections
-- **CRITICAL: Generate ALL possible specifications for this product type**
-- Extract every technical detail visible or known
-- Fill the "allSpecs" object with comprehensive product-specific details
-- Be thorough - more specifications = better listings`;
-
-    if (modelNumber) {
-      prompt += `\n\n**Product Model Number:** ${modelNumber}\n\nLook up this exact model and provide:
-- ALL technical specifications from manufacturer
-- Complete feature list
-- Every measurement and rating
-- All compatibility information
-- Full performance specifications
-- Any certifications or standards
-- Complete material/construction details
-- Everything a buyer would want to know`;
-    } else {
-      prompt += `\n\n**Note:** Analyze the product from the images provided.\n\nExtract from images:
-- Identify brand, model, and model numbers from labels
-- Read all visible text, labels, and tags
-- Estimate dimensions from context
-- Identify materials from appearance
-- Note any visible specifications or ratings
-- Capture serial numbers or model codes
-- Identify any certifications or safety marks
-- Extract ALL visible information`;
-    }
+  
+  Generate premium marketplace content for this product: **${productIdentifier}**
+  
+  Deliver the output in **strict JSON format**, matching the structure below.
+  
+  {
+    "seoTitle": "SEO-optimised product title",
+    "keyFeatures": [
+      "6-10 bullet points focused on real benefits, not just specs",
+      "Emphasise build quality, energy efficiency, hygiene, durability, capacity, quiet operation",
+      "Each point should highlight value and user benefits"
+    ],
+    "productDescription": "2–3 paragraphs in premium tone. Clear, helpful, professional — no hype. Explain who it’s ideal for and why.",
+    "specifications": {
+      "brand": "Product brand",
+      "model": "Product model",
+      "modelNumber": "Full model number",
+      "category": "Product category (Electronics, Fashion, Home Appliances, Furniture, Sports, Automotive, etc.)",
+      "subCategory": "Specific subcategory",
+      "dimensions": "Product dimensions (L x W x H)",
+      "weight": "Product weight",
+      "capacity": "Capacity/Size if applicable",
+      "color": "Product color/finish",
+      "material": "Primary materials used",
+      "year": "Year/manufacture date",
+      "condition": "Current condition assessment",
+      "powerSpecs": "Power requirements/battery (if applicable)",
+      "connectivity": "Connection types/ports (if applicable)",
+      "compatibility": "Compatible systems/models (if applicable)",
+      "warranty": "Warranty information (if known)",
+      "origin": "Country of manufacture (if visible)",
+      "certifications": "Safety certifications/standards (if visible)",
+      "allSpecs": {
+        "Generate ALL product-specific specifications here as key-value pairs": "Include every technical detail, feature, measurement, rating, etc. based on product type",
+        "For Electronics": "Screen size, resolution, processor, RAM, storage, battery, OS, etc.",
+        "For Appliances": "Energy rating, capacity, dimensions, load type, RPM, noise level, etc.",
+        "For Furniture": "Dimensions, material, weight capacity, assembly required, style, etc.",
+        "For Clothing": "Size, fit, fabric composition, care instructions, style, etc.",
+        "For Vehicles/Parts": "Make, model, year, VIN, mileage, engine, transmission, etc.",
+        "Be comprehensive": "Include everything visible or known about this specific product"
+      }
+    },
+    "shortMarketplaceSummary": "1 concise paragraph for eBay/FB Marketplace/Google Shopping (50-80 words)",
+    "longSeoDescription": "1-2 paragraphs targeting search keywords. Avoid repetition from earlier sections. Focus on benefits and search intent. (150-200 words)",
+    "seoKeywords": {
+      "primary": ["3-5 primary keywords"],
+      "secondary": ["5-7 secondary keywords"],
+      "longTail": ["5-8 long-tail keyword phrases"]
+    },
+    "marketplaceTags": ["20-30 relevant tags for marketplace categorisation"],
+    "condition": "new|like-new|excellent|good|fair|poor|for-parts",
+    "conditionNotes": "Specific condition details if visible, any defects or wear",
+    "suggestedPrice": {
+      "min": 0,
+      "max": 0,
+      "currency": "USD",
+      "reasoning": "Brief price justification based on condition and market value"
+    },
+    "warnings": ["Any safety or authenticity concerns if applicable"],
+    "confidence": 0.95
+  }
+  
+  **Tone & Style Guidelines:**
+  - Sounds like premium retail (Appliances Online / The Good Guys / JB Hi-Fi)
+  - Clean, confident, premium tone
+  - Australia context where relevant
+  - Zero fluff, zero overly-salesy language
+  - Use straightforward language, high trust, high clarity
+  - Focus on durability, hygiene, efficiency, and real user benefits
+  
+  **Formatting Rules:**
+  - Deliver JSON output only
+  - No Markdown or text explanations outside the JSON
+  - All keys must be present and filled accurately (no placeholders)
+  - Write as if product details are known
+  - Focus on high-intent keywords and conversion
+  - Include detailed, verified specifications
+  - Avoid repetition across sections
+  - Include all technical and descriptive details possible
+  
+  **Important:**
+  - Write as if product details are verified and complete
+  - Focus on high-intent SEO and conversion-driven structure
+  - Content must be suitable for Facebook Marketplace, eBay, Google Shopping & website listings
+  - Include keywords that enhance search ranking
+  - Be accurate and honest about the condition
+  - If uncertain about any detail, reflect that in the confidence score
+  
+  `;
 
     if (additionalInfo) {
-      prompt += `\n\n**Additional Context:** ${additionalInfo}`;
+      prompt += `
+  
+  **Additional Context:** ${additionalInfo}`;
     }
-
-    prompt += '\n\nBe accurate and honest about the condition. If you cannot determine certain details from the information provided, indicate that clearly in the confidence score.';
 
     return prompt;
   }
+
 
   /**
    * Parse AI response
@@ -256,10 +244,10 @@ Deliver the output in strict JSON format with the following structure:
         return {
           // Main title from seoTitle
           title: parsed.seoTitle?.substring(0, 200) || 'Product Listing',
-          
+
           // Use productDescription as main description
           description: parsed.productDescription || '',
-          
+
           // Additional structured content for marketplace
           marketplaceContent: {
             seoTitle: parsed.seoTitle || '',
@@ -274,17 +262,17 @@ Deliver the output in strict JSON format with the following structure:
             },
             marketplaceTags: Array.isArray(parsed.marketplaceTags) ? parsed.marketplaceTags : [],
           },
-          
+
           // Extract category from tags/keywords
           category: {
             main: parsed.specifications?.category || 'Other',
             sub: '',
             tags: Array.isArray(parsed.marketplaceTags) ? parsed.marketplaceTags.slice(0, 10) : [],
           },
-          
+
           condition: this.validateCondition(parsed.condition),
           conditionNotes: parsed.conditionNotes || '',
-          
+
           specifications: {
             brand: parsed.specifications?.brand || '',
             model: parsed.specifications?.model || '',
@@ -305,25 +293,25 @@ Deliver the output in strict JSON format with the following structure:
             warranty: parsed.specifications?.warranty || '',
             origin: parsed.specifications?.origin || '',
             certifications: parsed.specifications?.certifications || '',
-            features: Array.isArray(parsed.keyFeatures) 
-              ? parsed.keyFeatures 
+            features: Array.isArray(parsed.keyFeatures)
+              ? parsed.keyFeatures
               : [],
             allSpecs: parsed.specifications?.allSpecs || {},
           },
-          
+
           suggestedPrice: {
             min: parseFloat(parsed.suggestedPrice?.min) || 0,
             max: parseFloat(parsed.suggestedPrice?.max) || 0,
             currency: parsed.suggestedPrice?.currency || 'USD',
             reasoning: parsed.suggestedPrice?.reasoning || '',
           },
-          
+
           // Combine all keywords
           searchKeywords: [
             ...(Array.isArray(parsed.seoKeywords?.primary) ? parsed.seoKeywords.primary : []),
             ...(Array.isArray(parsed.seoKeywords?.secondary) ? parsed.seoKeywords.secondary : []),
           ],
-          
+
           warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
           confidence: parseFloat(parsed.confidence) || 0.5,
           aiProvider: provider,
