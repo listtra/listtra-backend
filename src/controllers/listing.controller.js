@@ -119,6 +119,7 @@ const listingController = {
       user_id: req.user._id,
       title: req.body.title,
       model_number: req.body.model_number || '',
+      additional_details: req.body.additional_details || '',
       photo_url: req.body.photo_url || DEFAULT_PLACEHOLDER_IMAGE,
       description: req.body.description,
       key_features: req.body.key_features || [],

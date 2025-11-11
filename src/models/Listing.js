@@ -20,6 +20,12 @@ const listingSchema = new mongoose.Schema({
     maxlength: 100,
     default: '',
   },
+  additional_details: {
+    type: String,
+    trim: true,
+    maxLength: 10000,
+    default: ''
+  },
   photo_url: {
     type: String,
     required: false,
@@ -77,9 +83,9 @@ const listingSchema = new mongoose.Schema({
   },
 }, {
   timestamps: false, // We're using created_at instead
-  toJSON: { 
+  toJSON: {
     virtuals: false,
-    transform: function(doc, ret) {
+    transform: function (doc, ret) {
       // Convert Map to plain object for specifications
       if (ret.specifications instanceof Map) {
         ret.specifications = Object.fromEntries(ret.specifications);
@@ -89,7 +95,7 @@ const listingSchema = new mongoose.Schema({
   },
   toObject: {
     virtuals: false,
-    transform: function(doc, ret) {
+    transform: function (doc, ret) {
       // Convert Map to plain object for specifications
       if (ret.specifications instanceof Map) {
         ret.specifications = Object.fromEntries(ret.specifications);
@@ -114,36 +120,36 @@ listingSchema.virtual('user', {
 });
 
 // Methods
-listingSchema.methods.toJSON = function() {
+listingSchema.methods.toJSON = function () {
   const listing = this.toObject();
-  
+
   // Convert Map to plain object for specifications
   if (listing.specifications instanceof Map) {
     listing.specifications = Object.fromEntries(listing.specifications);
   }
-  
+
   return listing;
 };
 
-listingSchema.methods.markAsSold = async function() {
+listingSchema.methods.markAsSold = async function () {
   this.status = 'sold';
   return this.save();
 };
 
-listingSchema.methods.softDelete = async function() {
+listingSchema.methods.softDelete = async function () {
   this.status = 'deleted';
   return this.save();
 };
 
 // Static methods
-listingSchema.statics.findActive = function(filter = {}) {
+listingSchema.statics.findActive = function (filter = {}) {
   return this.find({
     ...filter,
     status: 'active',
   }).sort({ created_at: -1 });
 };
 
-listingSchema.statics.findByUser = function(userId, includeInactive = false) {
+listingSchema.statics.findByUser = function (userId, includeInactive = false) {
   const filter = { user_id: userId };
   if (!includeInactive) {
     filter.status = 'active';
@@ -151,31 +157,31 @@ listingSchema.statics.findByUser = function(userId, includeInactive = false) {
   return this.find(filter).sort({ created_at: -1 });
 };
 
-listingSchema.statics.search = async function(query, options = {}) {
+listingSchema.statics.search = async function (query, options = {}) {
   const {
     page = 1,
     limit = 20,
   } = options;
-  
+
   const filter = {
     status: 'active',
   };
-  
+
   // Text search
   if (query) {
     filter.$text = { $search: query };
   }
-  
+
   const skip = (page - 1) * limit;
-  
+
   const listings = await this.find(filter)
     .sort({ created_at: -1 })
     .skip(skip)
     .limit(limit)
     .populate('user_id', 'name email avatar_url');
-  
+
   const total = await this.countDocuments(filter);
-  
+
   return {
     listings,
     pagination: {

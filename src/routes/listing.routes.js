@@ -13,6 +13,7 @@ const validateListing = [
   body('description').trim().notEmpty().isLength({ max: 10000 }),
   body('photo_url').optional({ checkFalsy: true }).isURL(),
   body('model_number').optional().trim().isLength({ max: 100 }),
+  body('additional_details').optional().trim().isLength({ max: 10000}),
   body('additional_photos').optional().isArray(),
   body('additional_photos.*').optional().isURL(),
   body('condition').optional().isIn(['new', 'like-new', 'excellent', 'good', 'fair', 'poor', 'for-parts']),
